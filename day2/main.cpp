@@ -8,6 +8,8 @@ void part1(std::string);
 std::string getID(std::string line);
 bool isPossible(std::string);
 
+void part2(std::string);
+
 std::unique_ptr<std::ifstream> openFile(std::string filePath) {
   std::unique_ptr<std::ifstream> file =
       std::make_unique<std::ifstream>(filePath);
@@ -27,10 +29,13 @@ int main(int argc, char **argv) {
     return 1;
   }
   part1(inputFile);
+  part2(inputFile);
   return 0;
 };
 
 /*
+ * Part 1
+ *
  * Example 1:
  * Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
  * Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
@@ -55,6 +60,9 @@ void part1(std::string filePath) {
   } // while
   std::cout << "Part 1: Sum of possible games is " << sum << "\n";
 }
+/*
+ * part 1 helper methods
+ */
 bool isPossible(std::string line) {
   const int RED_LIMIT = 12;
   const int BLUE_LIMIT = 14;
@@ -77,16 +85,14 @@ bool isPossible(std::string line) {
     if (std::isdigit(line[i]))
       num.push_back(line[i]);
     else if (num.size() > 0 && line[i] == 'b') {
-       blueCount += std::stoi(num); 
-       num.clear();
-    }
-    else if (num.size() > 0 && line[i] == 'r') {
-       redCount += std::stoi(num); 
-       num.clear();
-    }
-    else if (num.size() > 0 && line[i] == 'g') {
-       greenCount += std::stoi(num); 
-       num.clear();
+      blueCount += std::stoi(num);
+      num.clear();
+    } else if (num.size() > 0 && line[i] == 'r') {
+      redCount += std::stoi(num);
+      num.clear();
+    } else if (num.size() > 0 && line[i] == 'g') {
+      greenCount += std::stoi(num);
+      num.clear();
     }
   }
 
@@ -108,4 +114,45 @@ std::string getID(std::string line) {
       id.push_back(line[i]);
   }
   return id;
+}
+int getPower(std::string line){
+  int minRed = 0;
+  int minBlue = 0;
+  int minGreen = 0;
+  std::string numStr;
+
+  for (int i = line.find(":"); i < line.size(); i++) {
+    //if (line[i] == ';') {
+        
+    //}
+    if (std::isdigit(line[i]))
+      numStr.push_back(line[i]);
+    else if (numStr.size() > 0 && line[i] == 'b') {
+      int num = std::stoi(numStr);
+      if(minBlue < num)
+        minBlue = num;
+      numStr.clear();
+    } else if (numStr.size() > 0 && line[i] == 'r') {
+      int num = std::stoi(numStr);
+      if(minRed < num)
+        minRed = num;
+      numStr.clear();
+    } else if (numStr.size() > 0 && line[i] == 'g') {
+      int num = std::stoi(numStr);
+      if(minGreen < num)
+        minGreen = num;
+      numStr.clear();
+    }
+  }
+
+  return minRed * minBlue * minGreen;
+}
+void part2(std::string filePath) {
+  std::unique_ptr<std::ifstream> file = openFile(filePath);
+  std::string line;
+  int sum = 0;
+  while(std::getline(*file, line)){
+    sum += getPower(line);
+  }
+  std::cout << "Part 2: Sum of powers of games is " << sum << "\n";
 }
