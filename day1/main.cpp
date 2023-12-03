@@ -140,6 +140,7 @@ int main(int argc, char **argv) {
     inputFile = std::string(argv[1]);
   else {
     std::cout << "No input file given\n";
+    return 1;
   }
 
   part1(inputFile);

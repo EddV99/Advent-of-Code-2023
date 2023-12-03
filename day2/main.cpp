@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 
+void part1(std::string);
+
 std::unique_ptr<std::ifstream> openFile(std::string filePath) {
   std::unique_ptr<std::ifstream> file =
       std::make_unique<std::ifstream>(filePath);
@@ -25,3 +27,9 @@ int main(int argc, char **argv) {
 
   return 0;
 };
+
+
+void part1(std::string filePath){
+  std::unique_ptr<std::ifstream> file = openFile(filePath);
+
+}
