@@ -3,9 +3,11 @@
 #include <memory>
 #include <string>
 
-std::unique_ptr<std::ifstream> openFile(std::string filePath) {
-  std::unique_ptr<std::ifstream> file =
-      std::make_unique<std::ifstream>(filePath);
+using File = std::shared_ptr<std::ifstream>;
+
+std::shared_ptr<std::ifstream> openFile(std::string filePath) {
+  std::shared_ptr<std::ifstream> file =
+      std::make_shared<std::ifstream>(filePath);
   if (!file->is_open()) {
     std::cout << "Coudn't find input file\n";
     exit(1);
