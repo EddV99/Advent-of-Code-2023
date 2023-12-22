@@ -1,8 +1,6 @@
-#include <algorithm>
 #include <climits>
 #include <cstdlib>
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -11,20 +9,21 @@
 #include <tuple>
 #include <vector>
 
-/*
+/**
  * Declarations
  */
+const long NOT_VALID = -1;
 struct range;
 struct mapping;
 struct almanac;
 
-const long NOT_VALID = -1;
 void part1(std::string);
 void parseFile(std::shared_ptr<std::ifstream> file, almanac&, bool);
 void parseMapping(std::vector<mapping>&, std::vector<std::string>);
 
 void part2(std::string);
-/*
+
+/**
  * Util Helpers
  */
 std::shared_ptr<std::ifstream> openFile(std::string filePath) {
@@ -45,6 +44,10 @@ std::vector<std::string> tokenize(std::string line) {
     while (std::getline(stream, save, ' ')) { tokens.push_back(save); }
     return tokens;
 }
+
+/**
+ * Main Method
+ */
 int main(int argc, char** argv) {
     std::string inputFile;
     if (argc > 1) inputFile = std::string(argv[1]);
@@ -59,7 +62,7 @@ int main(int argc, char** argv) {
 };
 
 /**
- * Part 1
+ * structs 
  */
 
 /**
@@ -73,22 +76,8 @@ struct range {
 
     bool isValid() { return start != NOT_VALID && end != NOT_VALID; }
 
-    bool operator<(const range& other) const { return (start < other.start); }
-    bool operator=(const range& other) const {
-        return (start == other.start) && (end == other.end);
-    }
-
     bool inRange(long target) { return target >= start && target <= end; }
-    /**
-     * a     b
-     * [     ]
-     *     x
-     *    [      ]
-     *    c      d
-     *
-     *  a <= x <= b
-     *  c <= x <= d
-     */
+
     bool hasOverlap(range other) {
         return (start <= other.end) && (end >= other.start);
     }
@@ -97,36 +86,8 @@ struct range {
      *  Assume we know target is in range
      */
     long offset(long target) { return target - start; }
-
-    /**
-     * Return a list of ranges
-     *  The first in the list is the overlap
-     *  The rest is ranges not yet mapped
-     */
-    std::vector<range> getOverlap(range other) {
-        std::vector<range> res;
-        if (start < other.start) {
-            range overlap(other.start, end);
-            range extra(start, other.start);
-
-            res.push_back(overlap);
-            res.push_back(extra);
-            return res;
-        } else if (end > other.end) {
-            range overlap(start, other.end);
-            range extra(other.end, end);
-
-            res.push_back(overlap);
-            res.push_back(extra);
-            return res;
-            //} else if (start > other.start && end <= other.end) {
-        } else {
-            range overlap(start, end);
-            res.push_back(overlap);
-            return res;
-        }
-    }
 };
+
 /**
  * Represents a mapping
  */
@@ -150,12 +111,26 @@ struct mapping {
     std::tuple<mapping, range, range> overlap(range target) {
         if (target.start < from.start) {
             long offset = std::abs(target.end - from.start);
-            mapping result({from.start, target.end},
-                           {to.start, to.end + offset});
+
+            long fromEnd = target.end;
+
+            mapping result({from.start, fromEnd},
+                           {to.start, to.start + offset});
+
             range extra(target.start, from.start - 1);
-             
             range extra2(-1, -1);  // no extra
-            if (target.end > from.end) { extra2 = {from.end + 1, target.end}; }
+
+            if (target.end > from.end) {
+                extra2.start = from.end + 1;
+                extra2.end = target.end;
+
+                fromEnd = from.end;
+                offset = 0;
+
+                result.from = {from.start, fromEnd};
+                result.to = {to.start, to.end + offset};
+            }
+
             return std::make_tuple(result, extra, extra2);
 
         } else if (target.end > from.end) {
@@ -164,26 +139,32 @@ struct mapping {
 
             range extra(from.end + 1, target.end);
             range extra2(-1, -1);  // no extra
+
             return std::make_tuple(result, extra, extra2);
 
         } else if (target.start == from.start && target.end == from.end) {
             mapping result({from.start, from.end}, {to.start, to.end});
             range extra(-1, -1);   // no extra
             range extra2(-1, -1);  // no extra
+
+
             return std::make_tuple(result, extra, extra2);
         } else {
             long offsetStart = std::abs(target.start - from.start);
             long offsetEnd = std::abs(target.start - from.start)
                            + std::abs(target.end - target.start);
+
             mapping result({target.start, target.end},
                            {to.start + offsetStart, to.start + offsetEnd});
 
             range extra(-1, -1);   // no extra
             range extra2(-1, -1);  // no extra
+
             return std::make_tuple(result, extra, extra2);
         }
     }
 };
+
 /**
  * Represents the whole almanac
  */
@@ -214,36 +195,34 @@ struct almanac {
 
     long findLowestLocationPart1() {
         long lowest = LONG_MAX;
-        for (int i = 0; i < seedsPart1.size(); i++) {
-            long seed = seedsPart1[i];
-            long location = findInMap(
-                    findInMap(
-                            findInMap(
-                                    findInMap(
-                                            findInMap(
-                                                    findInMap(
-                                                            findInMap(
-                                                                    seed,
-                                                                    seedToSoil),
-                                                            soilToFertilizer),
-                                                    fertilizerToWater),
-                                            waterToLight),
-                                    lightToTemperature),
-                            temperatureToHumidity),
-                    humidityToLocation);
 
-            if (location < lowest) lowest = location;
+        std::vector<std::vector<mapping>> allMaps;
+        allMaps.push_back(seedToSoil);
+        allMaps.push_back(soilToFertilizer);
+        allMaps.push_back(fertilizerToWater);
+        allMaps.push_back(waterToLight);
+        allMaps.push_back(lightToTemperature);
+        allMaps.push_back(temperatureToHumidity);
+        allMaps.push_back(humidityToLocation);
+
+        for (auto& seed : seedsPart1) {
+            long target = seed;
+            for (auto& map : allMaps) { target = findInMap(target, map); }
+
+            if (target < lowest) lowest = target;
         }
+
         return lowest;
     }
-    std::vector<range> helper2(std::vector<range> targets,
-                               std::vector<mapping> maps) {
+    std::vector<range> getDstFromRanges(std::vector<range> targets,
+                                        std::vector<mapping> maps) {
         std::vector<range> dst;
 
-
         while (!targets.empty()) {
+            // get any target to check
             range target = targets.back();
-            targets.pop_back();
+            targets.pop_back();  // dont forget to delete it
+
             bool found = false;
             for (auto& map : maps) {
                 if (target.hasOverlap(map.from)) {
@@ -258,11 +237,11 @@ struct almanac {
                         if (std::get<2>(overlap).isValid())
                             targets.emplace_back(std::get<2>(overlap));
                     }
-
                     break;
                 }
             }
 
+            // looked through every map and nothing so it falls through
             if (!found) { dst.push_back(target); }
         }
 
@@ -279,27 +258,31 @@ struct almanac {
         allMaps.push_back(temperatureToHumidity);
         allMaps.push_back(humidityToLocation);
 
-        std::vector<range> current = seedsPart2;
+        // initial target range
+        std::vector<range> destinations = seedsPart2;
 
-        for (auto& map : allMaps) { current = helper2(current, map); }
+        for (int i = 0; i < allMaps.size(); i++)
+            destinations = getDstFromRanges(destinations, allMaps[i]);
 
-        long x = LONG_MAX;
-        for(int i = 0; i < current.size(); i++){
-            long y = current[i].start;
-            if(y < x && y != 0)
-                x = y;
+        /**
+         * last destinations should be the locations, so
+         * look through them and get the smallest one
+         */
+        long lowest = LONG_MAX;
+        for (int i = 0; i < destinations.size(); i++) {
+            if (destinations[i].start < lowest) lowest = destinations[i].start;
         }
-        return x;
+        return lowest;
     }
 };
-void part1(std::string inputFile) {
-    std::shared_ptr<std::ifstream> file = openFile(inputFile);
-    almanac puzzle;
-    parseFile(file, puzzle, true);
-    long lowest = puzzle.findLowestLocationPart1();
-    std::cout << "Part 1 Lowest Location is " << lowest << "\n";
-}
 
+/**
+ * parsing
+ */
+
+/**
+ * enums to help with parsing
+ */
 enum parseState {
     SEEDS,
     SEED_TO_SOIL,
@@ -398,6 +381,17 @@ void parseFile(std::shared_ptr<std::ifstream> file, almanac& puzzle,
             }
         }
     }
+}
+
+/**
+ * Part 1
+ */
+void part1(std::string inputFile) {
+    std::shared_ptr<std::ifstream> file = openFile(inputFile);
+    almanac puzzle;
+    parseFile(file, puzzle, true);
+    long lowest = puzzle.findLowestLocationPart1();
+    std::cout << "Part 1 Lowest Location is " << lowest << "\n";
 }
 
 /**
