@@ -19,7 +19,8 @@ void part2(std::string inputFile);
  * util
  */
 std::shared_ptr<std::ifstream> openFile(std::string filePath) {
-    std::shared_ptr<std::ifstream> file = std::make_shared<std::ifstream>(filePath);
+    std::shared_ptr<std::ifstream> file = std::make_shared<std::ifstream>(
+            filePath);
     if (!file->is_open()) {
         std::cout << "Coudn't find input file\n";
         exit(1);
@@ -59,9 +60,23 @@ int main(int argc, char** argv) {
 /**
  * Part 1
  */
-void part1(std::string inputFile) { std::shared_ptr<std::ifstream> file = openFile(inputFile); }
+void part1(std::string inputFile) {
+    std::shared_ptr<std::ifstream> file = openFile(inputFile);
+
+    std::string line;
+    while (std::getline(*file, line)) {
+        std::vector<std::string> tokens = tokenize(line);
+    }
+}
 
 /**
  * Part 2
  */
-void part2(std::string inputFile) { std::shared_ptr<std::ifstream> file = openFile(inputFile); }
+void part2(std::string inputFile) {
+    std::shared_ptr<std::ifstream> file = openFile(inputFile);
+
+    std::string line;
+    while (std::getline(*file, line)) {
+        std::vector<std::string> tokens = tokenize(line);
+    }
+}
